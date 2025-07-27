@@ -1,46 +1,40 @@
+<!-- client.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Crypto Crash WebSocket Client</title>
+  <title>Crypto Crash Test Client</title>
 </head>
 <body>
-  <h1>🪙 Crypto Crash Game</h1>
-  <p><strong>Multiplier:</strong> <span id="multiplier">Waiting...</span></p>
-  <p><strong>Crash Point:</strong> <span id="crash">–</span></p>
-  <p><strong>Cashouts:</strong></p>
-  <ul id="cashouts"></ul>
-  <input type="text" id="username" placeholder="Enter your username" />
-  <button onclick="cashout()">💸 Cash Out</button>
+  <h1>Crypto Crash WebSocket Test</h1>
+  <p id="status">Connecting...</p>
+  <p id="multiplier">Multiplier: -</p>
+  <p id="cashout"></p>
 
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script>
-    const socket = io("http://localhost:5000");
+    const socket = io('http://localhost:5000');
+    const username = prompt("Enter username for cashout testing:");
 
-    socket.on("multiplier_update", (data) => {
-      document.getElementById("multiplier").textContent = data.multiplier + 'x';
+    socket.on('connect', () => {
+      document.getElementById('status').innerText = '✅ Connected!';
+      socket.emit('join_round', 1);
     });
 
-    socket.on("round_crash", (data) => {
-      document.getElementById("crash").textContent = data.crashPoint + 'x';
+    socket.on('multiplier_update', ({ multiplier }) => {
+      document.getElementById('multiplier').innerText = 'Multiplier: ' + multiplier;
     });
 
-    socket.on("round_start", () => {
-      document.getElementById("crash").textContent = '–';
-      document.getElementById("multiplier").textContent = '1.00x';
+    socket.on('player_cashout', (data) => {
+      const { username, payoutCrypto, usdEquivalent, multiplier } = data;
+      document.getElementById('cashout').innerText = 
+        `${username} cashed out at ${multiplier}x → ${payoutCrypto} (${usdEquivalent} USD)`;
     });
 
-    socket.on("player_cashout", (data) => {
-      const list = document.getElementById("cashouts");
-      const item = document.createElement("li");
-      item.textContent = `${data.username} cashed out ${data.payoutCrypto} at ${data.multiplier}x ($${data.usdEquivalent})`;
-      list.appendChild(item);
-    });
-
-    function cashout() {
-      const username = document.getElementById("username").value;
-      socket.emit("cashout", { username });
-    }
+    // Optional: Cashout after 5 seconds
+    setTimeout(() => {
+      socket.emit('cashout', { username });
+    }, 5000);
   </script>
 </body>
 </html>
+
